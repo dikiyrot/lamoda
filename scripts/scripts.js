@@ -1,14 +1,58 @@
 const headerCityButton = document.querySelector('.header__city-button');
+const cartListGoods = document.querySelector('.cart__list-goods');
+const cardTotalCost = document.querySelector('.cart__total-cost');
+const subHeaderCart = document.querySelector('.subheader__cart');
+const cartOverlay = document.querySelector('.cart-overlay');
 const goodsTitle = document.querySelector('.goods__title');
 
 let hash = location.hash.substring(1);
 
-headerCityButton.textContent = localStorage.getItem('lomoda-location') || 'Ваш город?';
+// Ввод местоположения
+const updateLocation = () => {
+	headerCityButton.textContent = 
+	localStorage.getItem('lamoda-location') ||
+		 'Ваш город?';
+};
+updateLocation();
 
-headerCityButton.addEventListener('click', () => {
-   const city = prompt('Your city?');
-   localStorage.setItem('lomoda-location', city);
-});
+const getLocalStorage = () => JSON?.parse(localStorage.getItem('cart-lamoda')) || [];
+const setLocalStorage = data => localStorage.setItem('cart-lamoda', JSON.stringify(data));
+
+
+const renderCart = () => {
+	cartListGoods.textContent = '';
+
+	const cartItems = getLocalStorage();
+
+	let totalPrice = 0;
+
+	cartItems.forEach((item, i) => {
+
+		 const tr = document.createElement('tr');
+
+		 tr.innerHTML = `
+			  <td>${i+1}</td>
+			  <td>${item.brand} ${item.name}</td>
+			  ${item.color ? `<td>${item.color}</td>` : '<td>-</td>'}
+			  ${item.size ? `<td>${item.size}</td>` : '<td>-</td>'}
+			  <td>${item.cost} &#8381;</td>
+			  <td><button class="btn-delete" data-id="${item.id}">&times;</button></td>
+		 `;
+
+		 totalPrice += item.cost;
+		 cartListGoods.append(tr);
+	});
+
+	cardTotalCost.textContent = totalPrice + ' ₽';
+
+};
+
+const deleteItemCart = id => {
+	const cartItems = getLocalStorage();
+	const newCartItems = cartItems.filter(item => item.id !== id);
+	setLocalStorage(newCartItems);
+};
+
 
 //блокировка сколла
 const disableScroll = () => {
@@ -34,11 +78,11 @@ const enableScroll = () => {
 
 //модальное окно
 const subheaderCart = document.querySelector('.subheader__cart');
-const cartOverlay = document.querySelector('.cart-overlay');
 
 cartModalOpen = () => {
    cartOverlay.classList.add('cart-overlay-open');
    disableScroll();
+	renderCart();
 };
 
 cartModalClose = () => {
@@ -80,6 +124,22 @@ cartOverlay.addEventListener('click', (e) => {
       cartModalClose();
    }
 });
+
+cartListGoods.addEventListener('click', e => {
+	if (e.target.matches('.btn-delete')) {
+		 deleteItemCart(e.target.dataset.id);
+		 renderCart();
+	}
+});
+
+headerCityButton.addEventListener('click', () => {
+	const city = prompt('Укажите Ваш город').trim();
+	if (city !== null) {
+		 localStorage.setItem('lamoda-location', city);
+	}
+	updateLocation();
+});
+
 
 //страница категоий
 try {
@@ -186,6 +246,30 @@ try {
       } else {
          cardGoodSizes.style.display = 'none';
       }
+
+		if (getLocalStorage().some(item => item.id === id)) {
+			cardGoodBuy.classList.add('delete');
+			cardGoodBuy.textContent = 'Удалить из корзины';
+	  }
+
+		cardGoodBuy.addEventListener('click', () => {
+			if (cardGoodBuy.classList.contains('delete')) {
+				 deleteItemCart(id);
+				 cardGoodBuy.classList.remove('delete');
+				 cardGoodBuy.textContent = 'Добавить в корзину';
+				 return;
+			}
+
+			if (color) { data.color = cardGoodColor.textContent; }
+			if (sizes) { data.size = cardGoodSizes.textContent; }
+
+			cardGoodBuy.classList.add('delete');
+			cardGoodBuy.textContent = 'Удалить из корзины';
+
+			const cardData = getLocalStorage();
+			cardData.push(data);
+			setLocalStorage(cardData);
+	  });
    };
 
    cardGoodSelectWrapper.forEach((item) => {
